@@ -23,8 +23,14 @@ typedef unsigned long long uint64_t; // 64-bit unsigned integer
 typedef unsigned uint;
 
 typedef uint32_t size_t;  // address size
+
+#if defined(__LARGE_CODE_MODEL__) || defined(__LARGE_DATA_MODEL__)
+typedef uint32_t word_t;  // register size
+typedef uint32_t pc_t;    // program counter size
+#else
 typedef uint16_t word_t;  // register size
-//typedef uint32_t pc_t;    // program counter size
+typedef uint16_t pc_t;    // program counter size
+#endif
 
 typedef int8_t bool;
 #define true 1

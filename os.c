@@ -9,8 +9,8 @@
 void
 preempt_init(void)
 {
-  WDTCTL = WDTPW | WDTSSEL__SMCLK | WDTTMSEL | WDTCNTCL | WDTIS__8192;
-//  WDTCTL = WDT_ADLY_1_9;
+//  WDTCTL = WDTPW | WDTSSEL__SMCLK | WDTTMSEL | WDTCNTCL | WDTIS__8192;
+  WDTCTL = WDT_ADLY_1_9;
   SFRIE1 |= WDTIE;
 }
 
@@ -18,15 +18,20 @@ void
 preempt_trigger(void)
 {
   SFRIFG1 |= WDTIFG; // wdt interrupt pending
+//	IFG1 |= WDTIFG;
 }
 
 void
 preempt_reset(void)
 {
   SFRIFG1 &= ~WDTIFG; // no interrupt pending
-  WDTCTL = WDTPW | WDTSSEL__SMCLK | WDTTMSEL | WDTCNTCL | WDTIS__8192;
+//  WDTCTL = WDTPW | WDTSSEL__SMCLK | WDTTMSEL | WDTCNTCL | WDTIS__8192;
   WDTCTL = WDT_ADLY_1_9;
   SFRIE1 |= WDTIE;
+
+//	IFG1 &= ~WDTIFG;
+//	WDTCTL = WDT_ADLY_1_9;
+//	IE1 |= WDTIFG;
 }
 
 //void zero_stack(word_t *stack) {
@@ -46,6 +51,7 @@ os_thread_create(void (* routine)(void))
     if (threads[i].available) {
       threads[i].available = false;
       threads[i].ctx.sp = (word_t) &stacks[i][STACKSIZE - 1];
+      threads[i].ctx.sr = GIE;
       threads[i].ctx.pc = (word_t) routine;
       (void) link();
       __enable_interrupt();
@@ -92,10 +98,12 @@ os_thread_set(void (*routine1)(void),
 {
   threads[0].available = false;
   threads[0].ctx.sp = (word_t) &stacks[0][STACKSIZE - 1];
+  threads[0].ctx.sr = GIE;
   threads[0].ctx.pc = (word_t) routine1;
 
   threads[1].available = false;
   threads[1].ctx.sp = (word_t) &stacks[0][STACKSIZE - 1];
+  threads[1].ctx.sr = GIE;
   threads[1].ctx.pc = (word_t) routine2;
 
   threads[0].next = &threads[1];

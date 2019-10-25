@@ -22,7 +22,7 @@ typedef uint8_t tid_t;
 struct thread;
 
 struct context {
-  word_t r4, r5, r6, r7, r8, r9, r10, sp, pc;
+  word_t r4, r5, r6, r7, r8, r9, r10, sp, sr, pc;
 };
 
 word_t thread_get_sp(struct thread *this);

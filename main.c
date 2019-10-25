@@ -25,7 +25,6 @@
 
 
 void thread1(void) {
-  uint16_t i;
   for (;;) {
     P1OUT ^= BIT0;                      // Toggle P1.0 using exclusive-OR
     __delay_cycles(100000);
@@ -39,7 +38,7 @@ void thread1(void) {
 void thread2(void) {
   uint16_t i;
   for (;;) {
-    P1OUT ^= BIT1;                      // Toggle P1.0 using exclusive-OR
+   P4OUT ^= BIT7;                      // Toggle P4.7 using exclusive-OR
 
     __delay_cycles(100000);
 //    i = 0xFFFF;
@@ -53,18 +52,18 @@ void main(void)
 {
   WDTCTL = WDTPW | WDTHOLD;               // Stop watchdog timer
 
-  // Disable the GPIO power-on default high-impedance mode to activate
-  // previously configured port settings
-  PM5CTL0 &= ~LOCKLPM5;
-
-  // Clock System Setup
-  CSCTL0_H = CSKEY_H;                     // Unlock CS registers
-  CSCTL1 = DCOFSEL_0;                     // Set DCO to 1MHz
-  // Set SMCLK = MCLK = DCO, ACLK = VLOCLK
-  CSCTL2 = SELA__VLOCLK | SELS__DCOCLK | SELM__DCOCLK;
+//  // Disable the GPIO power-on default high-impedance mode to activate
+//  // previously configured port settings
+//  PM5CTL0 &= ~LOCKLPM5;
+//
+//  // Clock System Setup
+//  CSCTL0_H = CSKEY_H;                     // Unlock CS registers
+//  CSCTL1 = DCOFSEL_0;                     // Set DCO to 1MHz
+//  // Set SMCLK = MCLK = DCO, ACLK = VLOCLK
+//  CSCTL2 = SELA__VLOCLK | SELS__DCOCLK | SELM__DCOCLK;
 
   P1DIR = BIT0 | BIT1;                          // Set P1.0 to output direction
-
+  P4DIR = BIT7;
   timerA0_init();
 
   os_init();

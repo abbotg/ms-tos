@@ -11,7 +11,7 @@
 struct thread {
   union {
     struct context ctx;
-    word_t regs[9];
+    word_t regs[10];
   };
   tid_t tid;
   struct thread *next;
