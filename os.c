@@ -6,6 +6,7 @@
  */
 #include "os.h"
 
+
 void
 preempt_init(void)
 {
@@ -24,35 +25,21 @@ preempt_trigger(void)
 void
 preempt_reset(void)
 {
-  SFRIFG1 &= ~WDTIFG; // no interrupt pending
-//  WDTCTL = WDTPW | WDTSSEL__SMCLK | WDTTMSEL | WDTCNTCL | WDTIS__8192;
-  WDTCTL = WDT_ADLY_1_9;
-  SFRIE1 |= WDTIE;
-
-//	IFG1 &= ~WDTIFG;
-//	WDTCTL = WDT_ADLY_1_9;
-//	IE1 |= WDTIFG;
+	SFRIFG1 &= ~WDTIFG;
+	 WDTCTL = WDT_ADLY_1_9;
 }
-
-//void zero_stack(word_t *stack) {
-//  int i;
-//  for (i = 0; i < STACKSIZE; i++)
-//    stack[i] = 0;
-//}
 
 
 
 thread_t
-os_thread_create(void (* routine)(void))
+os_thread_create(void (*routine)(void))
 {
   int i;
   __disable_interrupt();
   for (i = 0; i < NUMTHREADS; ++i) {
     if (threads[i].available) {
       threads[i].available = false;
-      threads[i].ctx.sp = (word_t) &stacks[i][STACKSIZE - 1];
-      threads[i].ctx.sr = GIE;
-      threads[i].ctx.pc = (word_t) routine;
+      thread_init(threads + i, routine);
       (void) link();
       __enable_interrupt();
       return i;
@@ -96,19 +83,14 @@ void
 os_thread_set(void (*routine1)(void),
               void (*routine2)(void))
 {
-  threads[0].available = false;
-  threads[0].ctx.sp = (word_t) &stacks[0][STACKSIZE - 1];
-  threads[0].ctx.sr = GIE;
-  threads[0].ctx.pc = (word_t) routine1;
 
-  threads[1].available = false;
-  threads[1].ctx.sp = (word_t) &stacks[0][STACKSIZE - 1];
-  threads[1].ctx.sr = GIE;
-  threads[1].ctx.pc = (word_t) routine2;
+	thread_init(threads + 0, routine1);
+	thread_init(threads + 1, routine2);
 
-  threads[0].next = &threads[1];
-  threads[1].next = &threads[0];
-  run_ptr = &threads[0];
+	threads[0].next = &threads[1];
+	threads[1].next = &threads[0];
+
+	run_ptr = &threads[0];
 }
 
 
