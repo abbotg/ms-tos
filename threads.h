@@ -16,7 +16,7 @@
 #ifndef RTOS_THREADS_H
 #define RTOS_THREADS_H
 
-#include "time.h"
+#include "os.h"
 
 // alien types
 struct timespec;
@@ -24,17 +24,18 @@ struct timespec;
 /*
  * Threads
  */
-typedef int (*thrd_start_t) (void*);
+typedef int (*thrd_start_t)(void *);
+
 enum {
-  thrd_success,
-  thrd_nomem,
-  thrd_timedout,
-  thrd_busy,
-  thrd_error
+  thrd_success = 0,
+  thrd_nomem = 1,
+  thrd_timedout = 2,
+  thrd_busy = 3,
+  thrd_error = 4
 };
 
 struct thread;
-typedef struct thread thrd_t;
+typedef struct thread thrd_t; // TODO: this should not be a pointer to the actual thread struct
 
 /**
  * Creates a new thread executing the function func. The function is invoked as func(arg).
@@ -46,7 +47,8 @@ typedef struct thread thrd_t;
  * @return thrd_success if the creation of the new thread was successful. Otherwise returns thrd_nomem
  * if there was insufficient amount of memory or thrd_error if another error occurred.
  */
-int thrd_create(thrd_t *thr, thrd_start_t func, void *arg);
+int
+thrd_create(thrd_t *thr, thrd_start_t func, void *arg);
 
 /**
  * Checks whether lhs and rhs refer to the same thread.
@@ -54,13 +56,15 @@ int thrd_create(thrd_t *thr, thrd_start_t func, void *arg);
  * @param rhs thread to compare
  * @return Non-zero value if lhs and rhs refer to the same value, ​0​ otherwise.
  */
-int thrd_equal(thrd_t lhs, thrd_t rhs);
+int
+thrd_equal(thrd_t lhs, thrd_t rhs);
 
 /**
  * Returns the identifier of the calling thread.
  * @return The identifier of the calling thread.
  */
-thrd_t thrd_current(void);
+thrd_t
+thrd_current(void);
 
 /**
  * Blocks the execution of the current thread for at least until the TIME_UTC based duration pointed
@@ -72,13 +76,15 @@ thrd_t thrd_current(void);
  * May be NULL, in which case it is ignored
  * @return 0​on successful sleep, -1 if a signal occurred, other negative value if an error occurred.
  */
-int thrd_sleep(const struct timespec *duration, struct timespec *remaining);
+int
+thrd_sleep(const struct timespec *duration, struct timespec *remaining);
 
 /**
  * Provides a hint to the implementation to reschedule the execution of threads,
  * allowing other threads to run.
  */
-void thrd_yield(void);
+void
+thrd_yield(void);
 
 /**
  * First, for every thread-specific storage key which was created with a non-null destructor and for which the
@@ -93,7 +99,8 @@ void thrd_yield(void);
  * executed in the context of that last thread)
  * @param res the result value to return
  */
-void thrd_exit(int res) __attribute__ ((noreturn));
+void
+thrd_exit(int res) __attribute__ ((noreturn));
 
 /**
  * Detaches the thread identified by thr from the current environment. The resources held by the thread
@@ -101,7 +108,8 @@ void thrd_exit(int res) __attribute__ ((noreturn));
  * @param thr identifier of the thread to detach
  * @return thrd_success if successful, thrd_error otherwise.
  */
-int thrd_detach(thrd_t thr);
+int
+thrd_detach(thrd_t thr);
 
 /**
  * Blocks the current thread until the thread identified by thr finishes execution.
@@ -112,14 +120,14 @@ int thrd_detach(thrd_t thr);
  * @param res location to put the result code to
  * @return thrd_success if successful, thrd_error otherwise.
  */
-int thrd_join(thrd_t thr, int *res);
+int
+thrd_join(thrd_t thr, int *res);
 
 
 /*
  * Mutual exclusion
  */
-struct mutex;
-typedef struct mutex mtx_t;
+typedef bsem_t mtx_t;
 enum {
   mtx_plain,
   mtx_recursive,
@@ -139,7 +147,8 @@ enum {
  * @param type the type of the mutex
  * @return thrd_success if successful, thrd_error otherwise.
  */
-int mtx_init(mtx_t *mutex, int type);
+int
+mtx_init(mtx_t *mutex, int type);
 
 /**
  * Blocks the current thread until the mutex pointed to by mutex is locked.
@@ -149,7 +158,8 @@ int mtx_init(mtx_t *mutex, int type);
  * @param mutex pointer to the mutex to lock
  * @return thrd_success if successful, thrd_error otherwise.
  */
-int mtx_lock(mtx_t *mutex);
+int
+mtx_lock(mtx_t *mutex);
 
 /**
  * Blocks the current thread until the mutex pointed to by mutex is locked or until the TIME_UTC based
@@ -164,7 +174,8 @@ int mtx_lock(mtx_t *mutex);
  * @return thrd_success if successful, thrd_timedout if the timeout time has been reached before the
  * mutex is locked, thrd_error if an error occurs.
  */
-int mtx_timedlock(mtx_t *restrict mutex, const struct timespec *restrict time_point);
+int
+mtx_timedlock(mtx_t *restrict mutex, const struct timespec *restrict time_point);
 
 /**
  * Tries to lock the mutex pointed to by mutex without blocking. Returns immediately if the mutex is already locked.
@@ -175,7 +186,8 @@ int mtx_timedlock(mtx_t *restrict mutex, const struct timespec *restrict time_po
  * @return thrd_success if successful, thrd_busy if the mutex has already been locked or due to a spurious
  * failure to acquire an available mutex (since C17), thrd_error if an error occurs.
  */
-int mtx_trylock(mtx_t *mutex);
+int
+mtx_trylock(mtx_t *mutex);
 
 /**
  * Unlocks the mutex pointed to by mutex.
@@ -186,20 +198,26 @@ int mtx_trylock(mtx_t *mutex);
  * @param mutex pointer to the mutex to unlock
  * @return thrd_success if successful, thrd_error otherwise.
  */
-int mtx_unlock(mtx_t *mutex);
+int
+mtx_unlock(mtx_t *mutex);
 
 /**
  * Destroys the mutex pointed to by mutex.
  * If there are threads waiting on mutex, the behavior is undefined.
  * @param mutex pointer to the mutex to destroy
  */
-void mtx_destroy(mtx_t *mutex);
+void
+mtx_destroy(mtx_t *mutex);
 
 
 /*
  * Condition variables
  */
-struct condition_variable;
+struct condition_variable {
+  sem_t private_lock;
+  uint8_t num_waiters;
+  sem_t threads_to_wakeup;
+};
 typedef struct condition_variable cnd_t;
 
 /**
@@ -209,7 +227,8 @@ typedef struct condition_variable cnd_t;
  * @return thrd_success if the condition variable was successfully created. Otherwise returns thrd_nomem if
  * there was insufficient amount of memory or thrd_error if another error occurred.
  */
-int cnd_init(cnd_t *cond);
+int
+cnd_init(cnd_t *cond);
 
 /**
  * Unblocks one thread that currently waits on condition variable pointed to by cond.
@@ -217,7 +236,8 @@ int cnd_init(cnd_t *cond);
  * @param cond pointer to a condition variable
  * @return thrd_success if successful, thrd_error otherwise.
  */
-int cnd_signal(cnd_t *cond);
+int
+cnd_signal(cnd_t *cond);
 
 /**
  * Unblocks all thread that currently wait on condition variable pointed to by cond.
@@ -225,7 +245,8 @@ int cnd_signal(cnd_t *cond);
  * @param cond pointer to a condition variable
  * @return thrd_success if successful, thrd_error otherwise.
  */
-int cnd_broadcast(cnd_t *cond);
+int
+cnd_broadcast(cnd_t *cond);
 
 /**
  * Atomically unlocks the mutex pointed to by mutex and blocks on the condition
@@ -237,7 +258,8 @@ int cnd_broadcast(cnd_t *cond);
  * @param mutex pointer to the condition variable to block on
  * @return thrd_success if successful, thrd_error otherwise.
  */
-int cnd_wait(cnd_t *cond, mtx_t *mutex);
+int
+cnd_wait(cnd_t *cond, mtx_t *mutex);
 
 /**
  * Atomically unlocks the mutex pointed to by mutex and blocks on the condition
@@ -252,13 +274,15 @@ int cnd_wait(cnd_t *cond, mtx_t *mutex);
  * @return thrd_success if successful, thrd_timedout if the timeout time has been reached before the
  * mutex is locked, or thrd_error if an error occurred.
  */
-int cnd_timedwait(cnd_t *restrict cond, mtx_t *restrict mutex, const struct timespec *restrict time_point);
+int
+cnd_timedwait(cnd_t *restrict cond, mtx_t *restrict mutex, const struct timespec *restrict time_point);
 
 /**
  * Destroys the condition variable pointed to by cond.
  * If there are threads waiting on cond, the behavior is undefined.
  * @param cond pointer to the condition variable to destroy
  */
-void cnd_destroy(cnd_t *cond);
+void
+cnd_destroy(cnd_t *cond);
 
 #endif //RTOS_THREADS_H
