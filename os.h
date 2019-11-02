@@ -10,7 +10,7 @@
 
 #include <msp430.h>
 
-#include "types.h"
+#include "defines.h"
 #include "scheduler.h"
 #include "config.h"
 
@@ -18,8 +18,7 @@ typedef int8_t thread_t; // index in tcbs array
 
 uint16_t num_ctx_switches;
 
-word_t stacks[NUMTHREADS][STACKSIZE];
-struct thread threads[NUMTHREADS];
+thread threads[NUMTHREADS];
 unsigned run_ct;
 
 inline void preempt_trigger(void);

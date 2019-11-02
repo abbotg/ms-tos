@@ -10,9 +10,10 @@
 ;  Function args: R12-R15
 ;
 ;-------------------------------------------------------------------------------
-            .cdecls C, LIST, "msp430.h"       	; Include device header file
+            .cdecls "defines.h"
 
-            .text                           	; Assemble into program memory.
+
+            .sect ".text:_isr"
             .align 2
 
             .global preempt_reset
@@ -25,132 +26,148 @@
             .global isr_time_start
             .global isr_time_stop
 
+            .global context_switcher
+
 ;-------------------------------------------------------------------------------
 ; void context_save(void *)
 ;-------------------------------------------------------------------------------
 
-context_save: .macro R4, R5, R6, R7, R8, R9, R10, SP, R12
-			.if $DEFINED(__LARGE_CODE_MODEL__) | $DEFINED(__LARGE_DATA_MODEL__)
-				mova   	R4,   0(R12)
-	            mova   	R5,   4(R12)
-	            mova   	R6,   8(R12)
-	            mova  	R7,   12(R12)
-	            mova   	R8,   16(R12)
-	            mova   	R9,  20(R12)
-	            mova   	R10, 24(R12)
-	            mova   	SP,  28(R12)
+context_save: .macro R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, SP, R15
+			.if $DEFINED(RTOS_20BIT__)			; Save registers
+				mova   	R4,   0(R15)
+	            mova   	R5,   4(R15)
+	            mova   	R6,   8(R15)
+	            mova  	R7,   12(R15)
+	            mova   	R8,   16(R15)
+	            mova   	R9,  20(R15)
+	            mova   	R10, 24(R15)
+	            mova   	R11, 28(R15)
+	            mova   	R12, 32(R15)
+	            mova   	R13, 36(R15)
+	            mova   	R14, 40(R15)
+	            mova   	SP,  44(R15)
 
-	            mov.w	0(SP), 32(R12)			; save SR
-	            mov.w  	2(SP), 34(R12)			; save PC
+	            mov.w	4(SP), 48(R15)			; Copy trapframe over to context block
+	            mov.w  	6(SP), 50(R15)
 			.else
-				mov.w   R4,   0(R12)
-	            mov.w   R5,   2(R12)
-	            mov.w   R6,   4(R12)
-	            mov.w   R7,   6(R12)
-	            mov.w   R8,   8(R12)
-	            mov.w   R9,  10(R12)
-	            mov.w   R10, 12(R12)
-	            mov.w   SP,  14(R12)
+				mov.w   R4,   0(R15)
+	            mov.w   R5,   2(R15)
+	            mov.w   R6,   4(R15)
+	            mov.w   R7,   6(R15)
+	            mov.w   R8,   8(R15)
+	            mov.w   R9,  10(R15)
+	            mov.w   R10, 12(R15)
+	           	mov.w   R11, 14(R15)
+	            mov.w   R12, 16(R15)
+	            mov.w   R13, 18(R15)
+	            mov.w   R14, 20(R15)
+	            mov.w   SP,  22(R15)
 
-	            mov.w	0(SP), 16(R12)			; save SR
-	            mov.w   2(SP), 18(R12)			; save PC
+	            mov.w	2(SP), 24(R15)			; save SR
+	            mov.w   4(SP), 26(R15)			; save PC
 	        .endif
             .endm
 
 ;-------------------------------------------------------------------------------
 ; void context_load(void *)
 ;-------------------------------------------------------------------------------
-context_load: .macro R4, R5, R6, R7, R8, R9, R10, SP, R12
-			.if $DEFINED(__LARGE_CODE_MODEL__) | $DEFINED(__LARGE_DATA_MODEL__)
-				mova   0(R12), R4
-	            mova   4(R12), R5
-	            mova   8(R12), R6
-	            mova   12(R12), R7
-	            mova   16(R12), R8
-	            mova   20(R12), R9
-	            mova   24(R12), R10
-	            mova   28(R12), SP
+context_load: .macro R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, SP, R15
+			.if $DEFINED(RTOS_20BIT__)
+				mova   0(R15), R4
+	            mova   4(R15), R5
+	            mova   8(R15), R6
+	            mova   12(R15), R7
+	            mova   16(R15), R8
+	            mova   20(R15), R9
+	            mova   24(R15), R10
+	            mova   28(R15), R11
+	            mova   32(R15), R12
+	            mova   36(R15), R13
+	            mova   40(R15), R14
+	            mova   44(R15), SP
 			.else
-	            mov.w   0(R12), R4
-	            mov.w   2(R12), R5
-	            mov.w   4(R12), R6
-	            mov.w   6(R12), R7
-	            mov.w   8(R12), R8
-	            mov.w   10(R12), R9
-	            mov.w   12(R12), R10
-	            mov.w   14(R12), SP
+	            mov.w   0(R15), R4
+	            mov.w   2(R15), R5
+	            mov.w   4(R15), R6
+	            mov.w   6(R15), R7
+	            mov.w   8(R15), R8
+	            mov.w   10(R15), R9
+	            mov.w   12(R15), R10
+	            mov.w   24(R15), R11
+	            mov.w   16(R15), R12
+	            mov.w   18(R15), R13
+	            mov.w   20(R15), R14
+	            mov.w   22(R15), SP
 			.endif
             .endm
 
 ;-------------------------------------------------------------------------------
 ; Sets up interrupt stack for future return
 ;-------------------------------------------------------------------------------
-context_load_epilogue: .macro SP, R12
-			.if $DEFINED(__LARGE_CODE_MODEL__) | $DEFINED(__LARGE_DATA_MODEL__)
-				mov.w	32(R12), 0(SP)										; Put SR on the stack for RETI
-           	 	mov.w  	34(R12), 2(SP)          							; Put the PC on the stack for RETI
+context_load_epilogue: .macro SP, R15
+			.if $DEFINED(RTOS_20BIT__)
+				mov.w	48(R15), 4(SP)															; Put SR on the stack for RETI
+           	 	mov.w  	50(R15), 6(SP)          												; Put the PC on the stack for RETI
 			.else
-            	mov.w	16(R12), 0(SP)										; Put SR on the stack for RETI
-           	 	mov.w   18(R12), 2(SP)          							; Put the PC on the stack for RETI
+            	mov.w	24(R15), 2(SP)															; Put SR on the stack for RETI
+           	 	mov.w   26(R15), 4(SP)          												; Put the PC on the stack for RETI
 			.endif
             .endm
 
-WDT_ISR:
-			.if $DEFINED(__LARGE_CODE_MODEL__) | $DEFINED(__LARGE_DATA_MODEL__)
-				mova	&run_ptr, R12
+context_switcher:
+			.if $DEFINED(RTOS_20BIT__)
+				pushx.a R15																		; Save scratch register R15
+
+				mova	&run_ptr, R15															; Fetch current task (overwrites R15)
+				context_save R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, SP, R15			; Save context to current TCB
+
+				calla #schedule																	; Find next TCB to run
+				calla #preempt_reset															; Reset scheduler timer
+
+				mova	&run_ptr, R15															; Fetch new calculated TCB
+				context_load R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, SP, R15			; Load new TCB context
+				context_load_epilogue SP, R15													; Prepare interrupt stack for RETI
+
+				popx.a R15																		; Reload scratch register (don't need run pointer anymore)
 			.else
-           	 	mov.w   &run_ptr, R12           							; Get running TCB context
+				push.w  R15
+
+           	 	mov.w   &run_ptr, R15
+            	context_save R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, SP, R15
+
+            	call    #schedule
+            	call    #preempt_reset
+
+            	mov.w   &run_ptr, R15
+            	context_load R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, SP, R15
+				context_load_epilogue SP, R15
+				pop.w R15
             .endif
 
-			context_save R4, R5, R6, R7, R8, R9, R10, SP, R12				; Save context to current TCB
-
-			.if $DEFINED(__LARGE_CODE_MODEL__) | $DEFINED(__LARGE_DATA_MODEL__)
-				calla #schedule
-				calla #preempt_reset										; Reset scheduler timer
-			.else
-				call    #schedule               							; Update run_ptr
-            	call    #preempt_reset          							; Reset scheduler timer
-			.endif
-
-
-            .if $DEFINED(__LARGE_CODE_MODEL__) | $DEFINED(__LARGE_DATA_MODEL__)
-				mova	&run_ptr, R12
-			.else
-           	 	mov.w   &run_ptr, R12           							; Get new TCB context to run
-            .endif
-
-			context_load R4, R5, R6, R7, R8, R9, R10, SP, R12				; Load new TCB context
-			context_load_epilogue SP, R12									; Prepare interrupt stack for RETI
-            reti
+            reti																				; Branch to task
 
 
 preempt_firstrun: .asmfunc
-            .if $DEFINED(__LARGE_CODE_MODEL__) | $DEFINED(__LARGE_DATA_MODEL__)
-				mova	&run_ptr, R12
+            .if $DEFINED(RTOS_20BIT__)
+				mova	&run_ptr, R15
+				context_load R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, SP, R15			; Load context
+
+				calla #preempt_reset															; Reset scheduler timer
+
+				popx.a R15																		; Dummy variable used in subsequent calls, needs to be popped
 			.else
-           	 	mov.w   &run_ptr, R12           							; Get new TCB context to run
+           	 	mov.w   &run_ptr, R15
+           	 	context_load R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, SP, R15
+
+           	 	call #preempt_reset
+
+				pop.w R15
             .endif
 
-			context_load R4, R5, R6, R7, R8, R9, R10, SP, R12				; Load context
-
-			.if $DEFINED(__LARGE_CODE_MODEL__) | $DEFINED(__LARGE_DATA_MODEL__)
-				calla #preempt_reset										; Reset scheduler timer
-			.else
-				call #preempt_reset
-			.endif
-
-            nop
-            eint                            								; Enable interrupts for scheduler operation
-            nop
-
-			.if $DEFINED(__LARGE_CODE_MODEL__) | $DEFINED(__LARGE_DATA_MODEL__)
-				bra      36(R12)
-			.else
-				br      18(R12)												; Branch to first task
-			.endif
+				reti																			; Branch to first task
 
             .endasmfunc
 
-            ; WDT ISR
-			.intvec WDT_VECTOR, WDT_ISR
-            .end
+			.sect WDT_VECTOR
+			.word context_switcher
+			.end

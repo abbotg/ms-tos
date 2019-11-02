@@ -24,10 +24,19 @@
 #include "timer.h"
 
 
+volatile int f0 = 0;
+volatile int f1 = 1;
+
+int fib(int x, int y, int z, int w) {
+	return x + y + z + w;
+}
+
 void thread1(void) {
+
   for (;;) {
     P1OUT ^= BIT0;                      // Toggle P1.0 using exclusive-OR
     __delay_cycles(100000);
+
 //    os_yield();
 //    i = 0xFFFF;
 //    while (i != 0)
@@ -36,7 +45,6 @@ void thread1(void) {
 }
 
 void thread2(void) {
-  uint16_t i;
   for (;;) {
    P4OUT ^= BIT7;                      // Toggle P4.7 using exclusive-OR
 
@@ -64,6 +72,11 @@ void main(void)
 
   P1DIR = BIT0 | BIT1;                          // Set P1.0 to output direction
   P4DIR = BIT7;
+
+//  volatile trapframe_t t = trapframe((word_t) os_run, GIE);
+
+//  asm volatile ("   reti\n");
+
   timerA0_init();
 
   os_init();
@@ -75,5 +88,9 @@ void main(void)
   for (;;);
 }
 
+//#pragma vector = WDT_VECTOR
+//interrupt void __attribute__((naked)) callback(void) {
+////	context_switcher();
+//}
 
 #endif

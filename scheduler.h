@@ -8,7 +8,7 @@
 #include "config.h"
 #include "thread.h"
 
-struct thread *run_ptr; // currently running thread
+thread *run_ptr; // currently running thread
 
 // scheduler contract functions
 // all schedulers implement these functions
