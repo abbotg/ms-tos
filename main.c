@@ -22,6 +22,7 @@
 #include <msp430.h>
 #include "os.h"
 #include "timer.h"
+#include "threads.h"
 
 
 volatile int f0 = 0;

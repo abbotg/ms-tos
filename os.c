@@ -25,29 +25,37 @@ preempt_trigger(void)
 void
 preempt_reset(void)
 {
-	SFRIFG1 &= ~WDTIFG;
-	 WDTCTL = WDT_ADLY_1_9;
+  SFRIFG1 &= ~WDTIFG;
+  WDTCTL = WDT_ADLY_1_9;
 }
 
-
-
-thread_t
-os_thread_create(void (*routine)(void))
+trapframe_t
+trapframe_init(word_t pc, word_t sr)
 {
-  int i;
-  __disable_interrupt();
-  for (i = 0; i < NUMTHREADS; ++i) {
-    if (threads[i].available) {
-      threads[i].available = false;
-      thread_init(threads + i, routine);
-      (void) link();
-      __enable_interrupt();
-      return i;
-    }
-  }
-  __enable_interrupt();
-  return -1;
+  trapframe_t tf;
+#if defined(RTOS_MSP430X_TRAPFRAME__)
+  unsigned int pc_high_ = (pc & 0xF0000) >> 16;	// PC[19:16]
+    unsigned int pc_low_ = pc & 0xFFFF;				// PC[15:0]
+    unsigned int sr_ = sr & 0xFFF;					// SR
+
+    tf.pc_high = pc_high_;
+    tf.pc_low = pc_low_;
+    tf.sr = sr_;
+#else
+  tf.pc = pc & 0xFFFF;
+  tf.sr = sr & 0xFF;
+#endif
+
+  return tf;
 }
+
+// Returns the 'bottom' of the stack of a process
+uint16_t *
+stack_base(struct thread *this)
+{
+  return this->stack + STACKSIZE;
+}
+
 
 void
 os_init(void)
@@ -74,33 +82,24 @@ os_run(void)
 }
 
 void
-os_yield(void)
-{
-  preempt_trigger();
-}
-
-void
 os_thread_set(void (*routine1)(void),
               void (*routine2)(void))
 {
+  thrd_t thr1, thr2;
+  thrd_create(&thr1, (thrd_start_t) routine1, NULL);
+  thrd_create(&thr2, (thrd_start_t) routine2, NULL);
 
-	thread_init(threads + 0, routine1);
-	thread_init(threads + 1, routine2);
-
-	threads[0].next = &threads[1];
-	threads[1].next = &threads[0];
-
-	run_ptr = &threads[0];
+  thrd_join(thr1, NULL);
+  thrd_join(thr2, NULL);
 }
 
 
 void
 panic(c)
-  int c;
+    int c;
 {
   volatile int code = c; // for debug
-  for (;;)
-    ;
+  for (;;);
 }
 
 // Watchdog Timer interrupt service routine
@@ -121,5 +120,8 @@ panic(c)
 //  preempt_reset();
 //  context_load(&run_ptr->ctx);
 //}
+
+
+
 
 

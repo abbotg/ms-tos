@@ -5,10 +5,9 @@
 #ifndef RTOS_SCHEDULER_H
 #define RTOS_SCHEDULER_H
 
-#include "config.h"
-#include "thread.h"
+#include "os.h"
 
-thread *run_ptr; // currently running thread
+struct thread *run_ptr; // currently running thread
 
 // scheduler contract functions
 // all schedulers implement these functions

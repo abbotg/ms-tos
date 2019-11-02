@@ -15,7 +15,7 @@ link(void)
 {
   int i;
   int ct = 0;
-  thread *prev = 0, *first = 0;
+  struct thread *prev = 0, *first = 0;
   if (NUMTHREADS == 0)
     return ct;
   for (i = 0; i < NUMTHREADS; i++) {
