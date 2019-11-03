@@ -7,7 +7,7 @@
 ////////////////////////////
 
 #include "os.h"
-#include "threads.h"
+#include "thread.h"
 
 int
 thrd_create(thrd_t *thr, thrd_start_t func, void *arg)
@@ -117,6 +117,21 @@ thrd_join(thrd_t thr, int *res)
     return thrd_success;
   }
   return thrd_error;
+}
+
+void
+thread_fg_set(struct thread *thr, unsigned bit, bool val)
+{
+  if (val)
+    thr->flags.raw |= 1u << bit;
+  else
+    thr->flags.raw &= ~(1u << bit);
+}
+
+bool
+thread_fg_get(struct thread *thr, unsigned bit)
+{
+  return (bool) thr->flags.raw & (1u << bit);
 }
 
 ////////////////////////////
