@@ -35,43 +35,6 @@ stack_base(struct thread *this)
 
 
 void
-os_init(void)
-{
-  int i;
-  __disable_interrupt(); // disable interrupts until os_run
-  preempt_reset();
-  for (i = 0; i < NUMTHREADS; ++i)
-    thread_fg_set(&threads[i], THRD_AVAIL_BIT__, true);
-}
-
-void
-os_run(void)
-{
-//  if (run_ct) {
-//    preempt_init();
-//    context_load(&run_ptr->ctx);
-//  } else {
-//    for (;;);
-//  }
-  preempt_init();
-  preempt_firstrun();
-  panic(0);
-}
-
-void
-os_thread_set(void (*routine1)(void),
-              void (*routine2)(void))
-{
-  thrd_t thr1, thr2;
-  thrd_create(&thr1, (thrd_start_t) routine1, NULL);
-  thrd_create(&thr2, (thrd_start_t) routine2, NULL);
-
-  thrd_join(thr1, NULL);
-  thrd_join(thr2, NULL);
-}
-
-
-void
 panic(c)
     int c;
 {

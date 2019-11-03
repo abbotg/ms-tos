@@ -111,7 +111,6 @@ struct thread {
  * Global variables
  */
 uint16_t num_ctx_switches;
-struct thread threads[NUMTHREADS];
 unsigned run_ct;
 struct thread *run_ptr; // currently running thread
 
@@ -120,10 +119,12 @@ struct thread *run_ptr; // currently running thread
  */
 
 /* scheduler impl (defined in config.h) */
-extern void schedule(void);
-extern void sched_add(struct thread *);
-extern void sched_start(void);
-extern int link(void);
+extern void schedule(void); // called in the context switcher
+extern struct thread *sched_new(void); // Retrieve a new struct thread
+extern void sched_add(struct thread *); // Mark a thread as runnable
+extern void sched_start(void); // Start preemption if not running already
+extern void sched_init(void); // first call upon interaction with scheduler
+extern void sched_thread_exit(void); // notify scheduler that run_ptr has completed
 
 /* preempt.c */
 inline void preempt_trigger(void);
@@ -132,9 +133,6 @@ void preempt_reset(void);
 
 /* os.c */
 void panic(int) __attribute__ ((noreturn));
-void os_init(void);
-void os_run(void) __attribute__ ((noreturn));
-void os_thread_set(void (*routine1)(void), void (*routine2)(void)); // TODO: remove
 uint16_t *stack_base(struct thread *this);
 
 /* osasm.s */
