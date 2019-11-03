@@ -16,7 +16,12 @@
 #ifndef RTOS_THREADS_H
 #define RTOS_THREADS_H
 
-#include "os.h"
+#include <stdint.h>
+#include "semaphore.h"
+
+struct thread;
+extern void context_save(void *); // TODO: idk why these aren't linking properly
+extern void thread_fg_set(struct thread *thr, unsigned bit, bool val);
 
 // alien types
 struct timespec;
