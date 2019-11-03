@@ -12,7 +12,6 @@
 int
 thrd_create(thrd_t *thr, thrd_start_t func, void *arg)
 {
-  int i;
   struct {
     context_t ctx;
     trapframe_t tf;
@@ -24,22 +23,19 @@ thrd_create(thrd_t *thr, thrd_start_t func, void *arg)
   if (status == SYS_UNINITIALIZED) {     // Need to create a thread representing main
     if (NUMTHREADS <= 1)
       return thrd_nomem;
-    threads[0].ctx = temp_tf.ctx;
-    threads[0].tf = temp_tf.tf;
+    sched_init();
+    struct thread *main = sched_new();
+    main->ctx = temp_tf.ctx;
+    main->tf = temp_tf.tf;
     // TODO: thread member 'stack' is unused here
-    thread_fg_set(&threads[0], THRD_AVAIL_BIT__, false);
-    bsem_init(&threads[0].flags.raw, THRD_SEM_BIT__, false);
+    thread_fg_set(main, THRD_AVAIL_BIT__, false);
+    bsem_init(main->flags.raw, THRD_SEM_BIT__, false);
+    sched_add(main);
   }
 
-  for (i = 0; i < NUMTHREADS; i++) // find an available thread
-    if (thread_fg_get(&threads[i], THRD_AVAIL_BIT__))
-      break;
-  if (i == NUMTHREADS) {
-    __enable_interrupt();
+  thr = sched_new();
+  if (!thr)
     return thrd_nomem;
-  }
-
-  thr = &threads[i];
   thread_fg_set(thr, THRD_AVAIL_BIT__, false);
   bsem_init(&thr->flags.raw, THRD_SEM_BIT__, false);
 
@@ -60,8 +56,8 @@ thrd_create(thrd_t *thr, thrd_start_t func, void *arg)
 
   thr->ctx.r12 = (word_t) arg; // arg in parameter register
 
-  (void) link();
-  __enable_interrupt();
+  sched_add(thr);
+  sched_start();
   return thrd_success;
 }
 
