@@ -13,8 +13,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
-
-#include <config.h>
+#include "config.h"
 
 /* Determine structure sizes */
 

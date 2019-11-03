@@ -6,102 +6,43 @@
  */
 #include "os.h"
 
-
-void
-preempt_init(void)
+trapframe_t
+trapframe_init(word_t pc, word_t sr)
 {
-//  WDTCTL = WDTPW | WDTSSEL__SMCLK | WDTTMSEL | WDTCNTCL | WDTIS__8192;
-  WDTCTL = WDT_ADLY_1_9;
-  SFRIE1 |= WDTIE;
+  trapframe_t tf;
+#if defined(RTOS_MSP430X_TRAPFRAME__)
+  unsigned int pc_high_ = (pc & 0xF0000) >> 16;	// PC[19:16]
+    unsigned int pc_low_ = pc & 0xFFFF;				// PC[15:0]
+    unsigned int sr_ = sr & 0xFFF;					// SR
+
+    tf.pc_high = pc_high_;
+    tf.pc_low = pc_low_;
+    tf.sr = sr_;
+#else
+  tf.pc = pc & 0xFFFF;
+  tf.sr = sr & 0xFF;
+#endif
+
+  return tf;
 }
 
-void
-preempt_trigger(void)
+// Returns the 'bottom' of the stack of a process
+uint16_t *
+stack_base(struct thread *this)
 {
-  SFRIFG1 |= WDTIFG; // wdt interrupt pending
-//	IFG1 |= WDTIFG;
-}
-
-void
-preempt_reset(void)
-{
-	SFRIFG1 &= ~WDTIFG;
-	 WDTCTL = WDT_ADLY_1_9;
-}
-
-
-
-thread_t
-os_thread_create(void (*routine)(void))
-{
-  int i;
-  __disable_interrupt();
-  for (i = 0; i < NUMTHREADS; ++i) {
-    if (threads[i].available) {
-      threads[i].available = false;
-      thread_init(threads + i, routine);
-      (void) link();
-      __enable_interrupt();
-      return i;
-    }
-  }
-  __enable_interrupt();
-  return -1;
-}
-
-void
-os_init(void)
-{
-  __disable_interrupt(); // disable interrupts until os_run
-  preempt_reset();
-  int i;
-  for (i = 0; i < NUMTHREADS; ++i)
-    threads[i].available = 0;
-}
-
-void
-os_run(void)
-{
-//  if (run_ct) {
-//    preempt_init();
-//    context_load(&run_ptr->ctx);
-//  } else {
-//    for (;;);
-//  }
-  preempt_init();
-  preempt_firstrun();
-  panic(0);
-}
-
-void
-os_yield(void)
-{
-  preempt_trigger();
-}
-
-void
-os_thread_set(void (*routine1)(void),
-              void (*routine2)(void))
-{
-
-	thread_init(threads + 0, routine1);
-	thread_init(threads + 1, routine2);
-
-	threads[0].next = &threads[1];
-	threads[1].next = &threads[0];
-
-	run_ptr = &threads[0];
+  return this->stack + STACKSIZE;
 }
 
 
 void
 panic(c)
-  int c;
+    int c;
 {
   volatile int code = c; // for debug
-  for (;;)
-    ;
+  for (;;);
 }
+
+
 
 // Watchdog Timer interrupt service routine
 //#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
@@ -121,5 +62,8 @@ panic(c)
 //  preempt_reset();
 //  context_load(&run_ptr->ctx);
 //}
+
+
+
 
 
