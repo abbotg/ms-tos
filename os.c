@@ -6,29 +6,6 @@
  */
 #include "os.h"
 
-
-void
-preempt_init(void)
-{
-//  WDTCTL = WDTPW | WDTSSEL__SMCLK | WDTTMSEL | WDTCNTCL | WDTIS__8192;
-  WDTCTL = WDT_ADLY_1_9;
-  SFRIE1 |= WDTIE;
-}
-
-void
-preempt_trigger(void)
-{
-  SFRIFG1 |= WDTIFG; // wdt interrupt pending
-//	IFG1 |= WDTIFG;
-}
-
-void
-preempt_reset(void)
-{
-  SFRIFG1 &= ~WDTIFG;
-  WDTCTL = WDT_ADLY_1_9;
-}
-
 trapframe_t
 trapframe_init(word_t pc, word_t sr)
 {
@@ -102,20 +79,7 @@ panic(c)
   for (;;);
 }
 
-void
-thread_fg_set(struct thread *thr, unsigned bit, bool val)
-{
-  if (val)
-    thr->flags.raw |= 1u << bit;
-  else
-    thr->flags.raw &= ~(1u << bit);
-}
 
-bool
-thread_fg_get(struct thread *thr, unsigned bit)
-{
-  return (bool) thr->flags.raw & (1u << bit);
-}
 
 // Watchdog Timer interrupt service routine
 //#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
