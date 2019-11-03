@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include "os.h"
 #include "semaphore.h"
 #include "defines.h"
 #include "scheduler.h"
@@ -88,17 +89,28 @@ typedef union context context_t;
  */
 typedef uint8_t tid_t;
 
+#define THRD_AVAIL_BIT__ 0
+#define THRD_SEM_BIT__ 1
+
+union thread_flags {
+  uint8_t raw;
+  struct {
+    unsigned available : 1;
+    unsigned finished_semaphore : 1;
+  };
+};
+
 struct thread {
   context_t ctx; // Thread context
   trapframe_t tf;
   uint16_t stack[STACKSIZE]; // Process memory
   tid_t tid; // Thread ID
   struct thread *next;
-  bool available;
-  bsem_t finish_sem; // initially zero, waited on by thrd_join and posted by thrd_exit
-                     // TODO: finish_sem needs to be automatically posted on thread exit
+  union thread_flags flags;
 };
 
+void thread_fg_set(struct thread *thr, unsigned bit, bool val);
+inline bool thread_fg_get(struct thread *thr, unsigned bit);
 
 uint16_t num_ctx_switches;
 

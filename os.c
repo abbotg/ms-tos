@@ -60,11 +60,11 @@ stack_base(struct thread *this)
 void
 os_init(void)
 {
+  int i;
   __disable_interrupt(); // disable interrupts until os_run
   preempt_reset();
-  int i;
   for (i = 0; i < NUMTHREADS; ++i)
-    threads[i].available = 0;
+    thread_fg_set(&threads[i], THRD_AVAIL_BIT__, true);
 }
 
 void
@@ -100,6 +100,21 @@ panic(c)
 {
   volatile int code = c; // for debug
   for (;;);
+}
+
+void
+thread_fg_set(struct thread *thr, unsigned bit, bool val)
+{
+  if (val)
+    thr->flags.raw |= 1u << bit;
+  else
+    thr->flags.raw &= ~(1u << bit);
+}
+
+bool
+thread_fg_get(struct thread *thr, unsigned bit)
+{
+  return (bool) thr->flags.raw & (1u << bit);
 }
 
 // Watchdog Timer interrupt service routine
