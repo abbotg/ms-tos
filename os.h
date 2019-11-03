@@ -13,17 +13,14 @@
  * and is for OS purposes only.
  */
 
-#include <msp430.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <errno.h>
-
-#include "os.h"
-#include "semaphore.h"
+#include "user.h"
 #include "defines.h"
-#include "scheduler.h"
 #include "config.h"
-#include "threads.h"
+#include "scheduler.h"
+
+/*
+ * Types
+ */
 
 // TODO: can be packed into an int
 static enum {
@@ -82,12 +79,6 @@ union context {
 };
 typedef union context context_t;
 
-/**
- * Thread object
- * - Contains thread context
- * - Contains stack
- */
-typedef uint8_t tid_t;
 
 #define THRD_AVAIL_BIT__ 0
 #define THRD_SEM_BIT__ 1
@@ -100,6 +91,11 @@ union thread_flags {
   };
 };
 
+/**
+ * Thread object
+ * - Contains thread context
+ * - Contains stack
+ */
 struct thread {
   context_t ctx; // Thread context
   trapframe_t tf;
@@ -109,31 +105,45 @@ struct thread {
   union thread_flags flags;
 };
 
-void thread_fg_set(struct thread *thr, unsigned bit, bool val);
-inline bool thread_fg_get(struct thread *thr, unsigned bit);
 
+
+/*
+ * Global variables
+ */
 uint16_t num_ctx_switches;
-
 struct thread threads[NUMTHREADS];
 unsigned run_ct;
+struct thread *run_ptr; // currently running thread
 
+/*
+ * Function defs
+ */
+
+/* scheduler impl (defined in config.h) */
+extern void schedule(void);
+extern void sched_add(struct thread *);
+extern void sched_start(void);
+extern int link(void);
+
+/* preempt.c */
 inline void preempt_trigger(void);
 inline void preempt_init(void);
 void preempt_reset(void);
-extern void preempt_firstrun(void);
 
+/* os.c */
 void panic(int) __attribute__ ((noreturn));
-
 void os_init(void);
 void os_run(void) __attribute__ ((noreturn));
-
-
 void os_thread_set(void (*routine1)(void), void (*routine2)(void)); // TODO: remove
-
 uint16_t *stack_base(struct thread *this);
 
-// osasm.s
+/* osasm.s */
 extern void context_save(void *);
 extern void context_load(void *);
+extern void preempt_firstrun(void);
+
+/* threads.c */
+void thread_fg_set(struct thread *thr, unsigned bit, bool val);
+inline bool thread_fg_get(struct thread *thr, unsigned bit);
 
 #endif /* OS_H_ */
