@@ -16,8 +16,7 @@
 #ifndef RTOS_THREADS_H
 #define RTOS_THREADS_H
 
-#include <stdint.h>
-#include "semaphore.h"
+#include "types.h"
 
 struct thread;
 extern void context_save(void *); // TODO: idk why these aren't linking properly
@@ -29,7 +28,7 @@ struct timespec;
 /*
  * Threads
  */
-typedef int (*thrd_start_t)(void *);
+
 
 enum {
   thrd_success = 0,

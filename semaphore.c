@@ -3,7 +3,6 @@
 //
 
 #include "os.h"
-#include "semaphore.h"
 
 ////////////////////////////
 //// SEMAPHORES LIBRARY ////

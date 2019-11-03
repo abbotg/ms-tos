@@ -5,14 +5,10 @@
 #ifndef RTOS_SEMAPHORE_H
 #define RTOS_SEMAPHORE_H
 
-#include <stdbool.h>
-#include <stdint.h>
+#include "types.h"
 
 #define MAX_NUM_SEMAPHORES 255
 #define SEM_VALUE_MAX 255
-
-typedef uint8_t sem_t;
-typedef uint8_t bsem_t;
 
 int sem_init(sem_t *sem, unsigned int value);
 int sem_destroy(sem_t *sem);
