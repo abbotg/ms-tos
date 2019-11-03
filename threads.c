@@ -90,8 +90,11 @@ void
 thrd_exit(int res)
 {
   if (bsem_trywait(run_ptr->flags.raw, THRD_SEM_BIT__) == 0) {
+    __disable_interrupt();
     run_ptr->ctx.r12 = (word_t) res;
     bsem_post(&run_ptr->flags.raw, THRD_SEM_BIT__);
+    __disable_interrupt();
+    sched_thread_exit();
   } else {
     panic(9); // thread has exited twice??
   }

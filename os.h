@@ -124,6 +124,7 @@ extern struct thread *sched_new(void); // Retrieve a new struct thread
 extern void sched_add(struct thread *); // Mark a thread as runnable
 extern void sched_start(void); // Start preemption if not running already
 extern void sched_init(void); // first call upon interaction with scheduler
+extern void sched_thread_exit(void); // notify scheduler that run_ptr has completed
 
 /* preempt.c */
 inline void preempt_trigger(void);

@@ -59,6 +59,16 @@ sched_init(void) {
     thread_fg_set(&threads[i], THRD_AVAIL_BIT__, true);
 }
 
+void
+sched_thread_exit(void)
+{
+  thread_fg_set(run_ptr, THRD_AVAIL_BIT__, true);
+  (void) link();
+  schedule(); // TODO: Return value from thread needs to be saved somewhere other than context, b/c it could be overwritten
+  preempt_firstrun();
+  __enable_interrupt();
+}
+
 int
 link(void)
 {
