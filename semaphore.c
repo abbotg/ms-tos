@@ -84,75 +84,79 @@ sem_getvalue(sem_t *sem)
 }
 
 int
-bsem_init(bsem_t *sem, bool value)
+bsem_init(unsigned *sem, unsigned bit, bool value)
 {
   if (!sem || value > 1 || value < 0) {
     errno = EINVAL;
     return -1;
   }
   __disable_interrupt();
-  *sem = value;
+  if (value) {
+    *sem |= 1u << bit;
+  } else {
+    *sem &= ~(1u << bit);
+  }
   __enable_interrupt();
   return 0;
 }
 
 int
-bsem_destroy(bsem_t *sem)
+bsem_destroy(unsigned *sem, unsigned bit)
 {
   return 0;
 }
 
 int
-bsem_wait(bsem_t *sem)
+bsem_wait(unsigned *sem, unsigned bit)
 {
   if (!sem) {
     errno = EINVAL;
     return -1;
   }
   __disable_interrupt();
-  while (!*sem) {
+  while ((*sem & (1u << bit)) == 0) {
     __enable_interrupt();
     thrd_yield();
     __disable_interrupt();
   }
-  *sem = 0;
+  *sem &= ~(1u << bit);
   __enable_interrupt();
   return 0;
 }
 
 int
-bsem_trywait(bsem_t *sem)
+bsem_trywait(unsigned *sem, unsigned bit)
 {
   if (!sem) {
     errno = EINVAL;
     return -1;
   }
   __disable_interrupt();
-  if (!*sem) {
-    errno = EAGAIN;
+  if (*sem & (1u << bit)) {
+    *sem &= ~(1u << bit);
     __enable_interrupt();
-    return -1;
+    return 0;
   }
-  *sem = 0;
+  errno = EAGAIN;
   __enable_interrupt();
-  return 0;
+  return -1;
 }
 
 int
-bsem_post(bsem_t *sem)
+bsem_post(unsigned *sem, unsigned bit)
 {
   if (!sem) {
     errno = EINVAL;
     return -1;
   }
   __disable_interrupt();
-  *sem = 1;
+  *sem &= ~(1u << bit);
   __enable_interrupt();
   return 0;
 }
 
-bool bsem_getvalue(bsem_t *sem)
+bool bsem_getvalue(unsigned *sem, unsigned bit)
 {
-  return (bool) *sem;
+  return (bool) *sem & (1u << bit);
 }
 

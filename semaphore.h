@@ -21,12 +21,12 @@ int sem_trywait(sem_t *sem);
 int sem_post(sem_t *sem);
 unsigned int sem_getvalue(sem_t *sem);
 
-int bsem_init(bsem_t *sem, bool value);
-int bsem_destroy(bsem_t *sem);
-int bsem_wait(bsem_t *sem);
-int bsem_trywait(bsem_t *sem);
-int bsem_post(bsem_t *sem);
-bool bsem_getvalue(bsem_t *sem);
+int bsem_init(unsigned *sem, unsigned bit, bool value);
+int bsem_destroy(unsigned *sem, unsigned bit);
+int bsem_wait(unsigned *sem, unsigned bit);
+int bsem_trywait(unsigned *sem, unsigned bit);
+int bsem_post(unsigned *sem, unsigned bit);
+bool bsem_getvalue(unsigned *sem, unsigned bit);
 
 
 
