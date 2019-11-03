@@ -19,7 +19,7 @@ link(void)
   if (NUMTHREADS == 0)
     return ct;
   for (i = 0; i < NUMTHREADS; i++) {
-    if (!threads[i].available) {
+    if (!thread_fg_get(&threads[i], THRD_AVAIL_BIT__)) {
       ct++;
       if (!first)              // get reference to first to wrap around at the end
         first = &threads[i];
