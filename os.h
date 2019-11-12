@@ -30,11 +30,11 @@ void panic(int) __attribute__ ((noreturn));
 
 void os_init(void);
 void os_run(void) __attribute__ ((noreturn));
-thread_t os_thread_create(void (*routine)(void));
+thread_t os_thread_create(int (*routine)(void *));
 void os_yield(void);
 
 // test func
-void os_thread_set(void (*routine1)(void), void (*routine2)(void));
+void os_thread_set(int (*routine1)(void *), int (*routine2)(void *));
 
 
 #endif /* OS_H_ */

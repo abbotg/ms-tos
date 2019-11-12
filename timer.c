@@ -8,8 +8,8 @@ volatile uint16_t start, stop, isr_time;
 
 void timerA0_init(void)
 {
-//  TA0CTL |= MC_0 | TACLR; // Stop the Timer A0 and clear it.
-//  TA0CTL |= TASSEL__SMCLK | ID__8 | MC__CONTINUOUS;
+  TA0CTL |= MC_0 | TACLR; // Stop the Timer A0 and clear it.
+  TA0CTL |= TASSEL__SMCLK | ID__8 | MC__CONTINUOUS;
 }
 
 uint16_t timerA0_val(void)

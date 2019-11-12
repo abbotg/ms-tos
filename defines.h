@@ -44,4 +44,6 @@
 	typedef uint16_t word_t;
 #endif
 
+#define RTOS_STACK_CHECK__
+
 #endif /* DEFINES_H_ */

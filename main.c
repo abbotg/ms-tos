@@ -31,11 +31,15 @@ int fib(int x, int y, int z, int w) {
 	return x + y + z + w;
 }
 
-void thread1(void) {
-
+int thread1(void *arg) {
+	volatile int*k = ((volatile int*)arg);
   for (;;) {
     P1OUT ^= BIT0;                      // Toggle P1.0 using exclusive-OR
+    *k = *k + 1;
+
     __delay_cycles(100000);
+
+
 
 //    os_yield();
 //    i = 0xFFFF;
@@ -44,10 +48,11 @@ void thread1(void) {
   }
 }
 
-void thread2(void) {
+int thread2(void *arg) {
+	volatile int*k = ((volatile int*)arg);
   for (;;) {
    P4OUT ^= BIT7;                      // Toggle P4.7 using exclusive-OR
-
+   *k = *k + 1;
     __delay_cycles(100000);
 //    i = 0xFFFF;
 //    while (i != 0)

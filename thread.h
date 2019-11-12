@@ -72,13 +72,13 @@ typedef struct __attribute__((packed)) {
 
 typedef uint8_t tid_t;
 
-typedef struct {
+typedef struct thread {
 
 	// Thread context
 	context ctx;
 
 	// Process memory
-	uint16_t stack[STACKSIZE];
+	uint16_t stack[sizeof(word_t) + sizeof(trapframe) + STACKSIZE + sizeof(word_t)];
 
 	// Thread ID
 	tid_t tid;
@@ -87,9 +87,9 @@ typedef struct {
 	bool available;
 } thread;
 
-void thread_init(thread *this, void (*routine)(void));
+void thread_init(thread *this, int (*routine)(void *), void *arg);
 
 word_t thread_get_sp(thread *this);
 void thread_set_sp(thread *this, word_t new);
 
-#endif //RTOS_THREAD_H
+#endif // RTOS_THREAD_H

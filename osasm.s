@@ -16,12 +16,15 @@
             .sect ".text:_isr"
             .align 2
 
+			.global preempt_init
             .global preempt_reset
+
             .global schedule
             .global run_ptr
             .global num_ctx_switches
 
             .global preempt_firstrun
+			.global panic
 
             .global isr_time_start
             .global isr_time_stop
@@ -121,6 +124,13 @@ context_switcher:
 				mova	&run_ptr, R15															; Fetch current task (overwrites R15)
 				context_save R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, SP, R15			; Save context to current TCB
 
+			.if $DEFINED(RTOS_STACK_CHECK__)
+				addx.a #52, R15
+				cmpa R15, SP
+				jl kernel_panic
+				subx.a #52, R15
+			.endif
+
 				calla #schedule																	; Find next TCB to run
 				calla #preempt_reset															; Reset scheduler timer
 
@@ -135,23 +145,42 @@ context_switcher:
            	 	mov.w   &run_ptr, R15
             	context_save R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, SP, R15
 
+			.if $DEFINED(RTOS_STACK_CHECK__)
+				add.w #28, R15
+				cmp R15, SP
+				jl kernel_panic
+				sub.w #28, R15
+			.endif
+
             	call    #schedule
             	call    #preempt_reset
 
             	mov.w   &run_ptr, R15
             	context_load R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, SP, R15
 				context_load_epilogue SP, R15
+
 				pop.w R15
             .endif
 
             reti																				; Branch to task
 
+kernel_panic: .asmfunc
+			.if $DEFINED(RTOS_20BIT__)
+				mova #69, R12
+				calla #panic
+			.else
+				mov.w #69, R12
+				call #panic
+			.endif
+
+			.endasmfunc
 
 preempt_firstrun: .asmfunc
             .if $DEFINED(RTOS_20BIT__)
 				mova	&run_ptr, R15
 				context_load R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, SP, R15			; Load context
 
+				calla #preempt_init
 				calla #preempt_reset															; Reset scheduler timer
 
 				popx.a R15																		; Dummy variable used in subsequent calls, needs to be popped
@@ -159,6 +188,7 @@ preempt_firstrun: .asmfunc
            	 	mov.w   &run_ptr, R15
            	 	context_load R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, SP, R15
 
+				call #preempt_init
            	 	call #preempt_reset
 
 				pop.w R15
